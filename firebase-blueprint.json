@@ -1,0 +1,154 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered contributor or administrator account profile.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "fullName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "contributor"] },
+        "country": { "type": "string" },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "emailVerified": { "type": "boolean" }
+      },
+      "required": ["id", "email", "role"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Document marking user as authorized administrator.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin"] },
+        "addedAt": { "type": "string" }
+      },
+      "required": ["email", "role"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Contribution record with crypto coordinates and 8x projection.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "reference": { "type": "string" },
+        "userId": { "type": "string" },
+        "contributorName": { "type": "string" },
+        "contributorEmail": { "type": "string" },
+        "contributorCountry": { "type": "string" },
+        "contributorPhone": { "type": "string" },
+        "amount": { "type": "number" },
+        "multiplier": { "type": "number" },
+        "projectedTotal": { "type": "number" },
+        "projectedGain": { "type": "number" },
+        "type": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "cryptoSymbol": { "type": "string" },
+        "cryptoNetwork": { "type": "string" },
+        "cryptoAddress": { "type": "string" },
+        "txHash": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed", "flagged", "refunded"] },
+        "date": { "type": "string" },
+        "receiptNumber": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "reference", "amount", "multiplier", "status", "date"]
+    },
+    "CryptoWallet": {
+      "title": "CryptoWallet",
+      "description": "Managed cryptocurrency deposit addresses configured by administrator.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "cryptoName": { "type": "string" },
+        "symbol": { "type": "string" },
+        "network": { "type": "string" },
+        "address": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "qrCodeUrl": { "type": "string" }
+      },
+      "required": ["id", "cryptoName", "symbol", "network", "address", "isActive"]
+    },
+    "Branding": {
+      "title": "Branding",
+      "description": "Initiative configuration, copy, and multiplier parameters.",
+      "type": "object",
+      "properties": {
+        "websiteName": { "type": "string" },
+        "tagline": { "type": "string" },
+        "heroHeadline": { "type": "string" },
+        "heroSubtext": { "type": "string" },
+        "multiplier": { "type": "number" },
+        "minAmount": { "type": "number" },
+        "maxAmount": { "type": "number" },
+        "aboutHeading": { "type": "string" },
+        "aboutParagraph1": { "type": "string" },
+        "aboutParagraph2": { "type": "string" },
+        "contactEmail": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "contactAddress": { "type": "string" }
+      },
+      "required": ["websiteName", "multiplier"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Administrative actions and verification logs.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "adminEmail": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["id", "timestamp", "adminEmail", "action", "details"]
+    },
+    "SupportMessage": {
+      "title": "SupportMessage",
+      "description": "Contributor inquiry messages.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "subject", "message", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile collection."
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Privileged administrator registration collection."
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Contribution records collection."
+    },
+    "/crypto_wallets/{walletId}": {
+      "schema": "CryptoWallet",
+      "description": "Active and inactive crypto wallet addresses managed by admin."
+    },
+    "/settings/{settingId}": {
+      "schema": "Branding",
+      "description": "Global application branding and multiplier parameters."
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Audit trail entries generated on administrative changes."
+    },
+    "/support_messages/{messageId}": {
+      "schema": "SupportMessage",
+      "description": "Inquiries submitted via the contact form."
+    }
+  }
+}

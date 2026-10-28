@@ -1,0 +1,141 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Helpers ---
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'onometroy14@gmail.com' ||
+        request.auth.token.email == 'admin@kenpaxtoninitiative.com'
+      );
+    }
+
+    // --- Entity Validation Helpers ---
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'email', 'role']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.email is string && data.email.size() <= 200 &&
+             data.role in ['admin', 'contributor'];
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['id', 'reference', 'amount', 'multiplier', 'status', 'date']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.reference is string && data.reference.size() <= 100 &&
+             data.amount is number && data.amount > 0 &&
+             data.multiplier is number &&
+             data.status in ['pending', 'completed', 'flagged', 'refunded'] &&
+             data.date is string && data.date.size() <= 60;
+    }
+
+    function isValidCryptoWallet(data) {
+      return data.keys().hasAll(['id', 'cryptoName', 'symbol', 'network', 'address', 'isActive']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.cryptoName is string && data.cryptoName.size() <= 60 &&
+             data.symbol is string && data.symbol.size() <= 30 &&
+             data.network is string && data.network.size() <= 80 &&
+             data.address is string && data.address.size() <= 256 &&
+             data.isActive is bool;
+    }
+
+    function isValidBranding(data) {
+      return data.keys().hasAll(['websiteName', 'multiplier']) &&
+             data.websiteName is string && data.websiteName.size() <= 120 &&
+             data.multiplier is number;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['id', 'timestamp', 'adminEmail', 'action', 'details']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.timestamp is string && data.timestamp.size() <= 60 &&
+             data.adminEmail is string && data.adminEmail.size() <= 200 &&
+             data.action is string && data.action.size() <= 120 &&
+             data.details is string && data.details.size() <= 2000;
+    }
+
+    function isValidSupportMessage(data) {
+      return data.keys().hasAll(['id', 'name', 'email', 'subject', 'message', 'status', 'createdAt']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 120 &&
+             data.email is string && data.email.size() <= 200 &&
+             data.subject is string && data.subject.size() <= 200 &&
+             data.message is string && data.message.size() <= 5000 &&
+             data.status is string &&
+             data.createdAt is string && data.createdAt.size() <= 60;
+    }
+
+    // Test connection endpoint
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming()) && (incoming().role == 'contributor' || isAdmin());
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin()) && isValidId(userId) && isValidUser(incoming()) && (isAdmin() || incoming().role == existing().role);
+      allow delete: if isAdmin();
+    }
+
+    // Admins Collection
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() && isValidId(adminId);
+    }
+
+    // Transactions Collection
+    match /transactions/{transactionId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidId(transactionId) && isValidTransaction(incoming()) && (incoming().userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin() && isValidId(transactionId) && isValidTransaction(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Managed Crypto Wallets (Public can read active addresses; only admins manage them)
+    match /crypto_wallets/{walletId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(walletId) && isValidCryptoWallet(incoming());
+      allow update: if isAdmin() && isValidId(walletId) && isValidCryptoWallet(incoming());
+      allow delete: if isAdmin() && isValidId(walletId);
+    }
+
+    // Initiative Branding / Content Settings
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(settingId) && isValidBranding(incoming());
+    }
+
+    // Audit Logs (Only admins can read/manage; system records on create)
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn() && isValidId(logId) && isValidAuditLog(incoming());
+      allow update, delete: if isAdmin() && isValidId(logId);
+    }
+
+    // Support Messages
+    match /support_messages/{messageId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isValidId(messageId) && isValidSupportMessage(incoming());
+    }
+  }
+}

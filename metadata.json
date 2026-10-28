@@ -1,0 +1,6 @@
+{
+  "name": "Ken Paxton Donation Initiative",
+  "description": "Official contribution platform and interactive 8× multiplier calculator for the Ken Paxton Initiative, featuring verified contribution tracking, transparent projections, and contributor management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
